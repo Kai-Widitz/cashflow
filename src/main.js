@@ -1,5 +1,6 @@
 import fs from 'fs';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { CATEGORY_KEYWORDS } from '../private/keywords.js';
 //Constants
 const PDF_X_LOWER_LIMIT_DEPOSITS = 500;
 const PDF_Y_DELTA_LINE_LIMIT = 15;
@@ -56,6 +57,13 @@ async function extractLines(filePath) {
 }
 
 function getCategoryFromDesc(desc) {
+    for (let [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+        for (let keyword of CATEGORY_KEYWORDS[category]) {
+            if (desc.includes(keyword)) {
+                return category
+            }
+        }
+    }
     return "unknown"
 }
 
@@ -117,16 +125,31 @@ function parseDayMoStr(dateStr, year) {
 
 // test
 const lines = extractLines('uploads/test.pdf').then((lines) => {
-    let acceptedTrans = extractTransactions(lines)[0];
-    let totalDeposits = 0
-    let totalWithdrawals = 0
-    for (let transaction of acceptedTrans) {
-        if (transaction.amount < 0) {
-            totalWithdrawals -= transaction.amount
-        } else {
-            totalDeposits += transaction.amount
+    let acceptedTs = extractTransactions(lines)[0];
+    let byCategory = {};
+    let totalDeposits = 0;
+    let totalWithdrawals = 0;
+    for (let ts of acceptedTs) {
+        if (ts.category != "INTERNAL_TRANSFERS") {
+            if (ts.amount < 0) {
+                totalWithdrawals -= ts.amount;
+                if (ts.category in byCategory) {
+                    byCategory[ts.category] -= ts.amount;
+                } else {
+                    byCategory[ts.category] = -1 * ts.amount;
+                }
+            } else {
+                totalDeposits += ts.amount;
+            }
         }
     }
-    console.log(`no. of transactions: ${acceptedTrans.length}\n deposits: ${totalDeposits}, withdrawals: ${totalWithdrawals}`)
+    let byCategoryPercent = {};
+    for (let category of Object.keys(byCategory)) {
+        byCategoryPercent[category] = String(((byCategory[category] / totalDeposits) * 100).toFixed(2)) + '%';
+    }
+
+    console.log(`no. of transactions: ${acceptedTs.length}\n deposits: ${totalDeposits}, withdrawals: ${totalWithdrawals}`);
+    console.log(byCategory);
+    console.log(byCategoryPercent);
 })
 

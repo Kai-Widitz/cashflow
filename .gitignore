@@ -13,6 +13,7 @@ npm-debug.log*
 
 # Uploaded files (temp storage)
 uploads/
+private/
 
 # OS files
 .DS_Store
