@@ -17,10 +17,8 @@ class Transaction {
 }
 
 // Functions
-async function extractLines(filePath) {
-  const dataBuffer = new Uint8Array(fs.readFileSync(filePath));
-  const pdf = await pdfjsLib.getDocument({ data: dataBuffer }).promise;
-
+export async function extractLines(dataBuffer) {
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(dataBuffer) }).promise;
   let lines = [];
 
   for (let i = 1; i <= pdf.numPages; i++) {
@@ -64,7 +62,7 @@ function getCategoryFromDesc(desc) {
 
 
 
-function extractTransactions(lines) {
+export function extractTransactions(lines) {
     const accepted = [];
     const rejected = [];
     const year = new Date().getFullYear();
@@ -131,21 +129,4 @@ function parseDayMoStr(dateStr, year) {
     return date
 }
 
-// test
-const lines = extractLines('uploads/test.pdf').then((lines) => {
-    let acceptedTrans = extractTransactions(lines)[0];
-    let totalDeposits = 0
-    let totalWithdrawals = 0
-    for (let transaction of acceptedTrans) {
-        console.log(transaction)
-        if (transaction.amount < 0) {
-            totalWithdrawals -= transaction.amount
-        } else {
-            totalDeposits += transaction.amount
-        }
-    }
-    const { inserted, skipped } = addTransactions(acceptedTrans);
-    console.log(`inserted: ${inserted}, skipped: ${skipped}`);
-    console.log(`no. of transactions: ${acceptedTrans.length}\n deposits: ${totalDeposits}, withdrawals: ${totalWithdrawals}`)
-})
 
