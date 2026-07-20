@@ -1,15 +1,18 @@
 import fs from 'fs';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { createHash } from 'crypto';
+import { addTransactions, countTransactions, getAllTransactions } from './db.js';
 //Constants
 const PDF_X_LOWER_LIMIT_DEPOSITS = 500;
 const PDF_Y_DELTA_LINE_LIMIT = 15;
 // Classes
 class Transaction {
-  constructor(date, description, amount, category) {
+  constructor(date, description, amount, category, uid) {
     this.date = date;
     this.description = description;
     this.amount = amount;
     this.category = category
+    this.uid = uid
   }
 }
 
@@ -59,10 +62,13 @@ function getCategoryFromDesc(desc) {
     return "unknown"
 }
 
+
+
 function extractTransactions(lines) {
     const accepted = [];
     const rejected = [];
     const year = new Date().getFullYear();
+    const seen = {};
     for (let lineData of lines) {
         const [line, transactionType] = lineData; 
         if (line.length == 3) {
@@ -94,7 +100,17 @@ function extractTransactions(lines) {
             }
 
             const category = getCategoryFromDesc(descStr);
-            const newTransaction = new Transaction(dateFinal, descStr, amountFinal, category);
+            let uid = createHash('sha256')
+                .update(`${dateFinal.toISOString()}|${descStr}|${amountFinal}`)
+                .digest('hex')
+                .slice(0, 32);
+            if (uid in seen) {
+                seen[uid] += 1;
+                uid = uid + "-" + String(seen[uid]);
+            } else {
+                seen[uid] = 0
+            }
+            const newTransaction = new Transaction(dateFinal, descStr, amountFinal, category, uid);
             accepted.push(newTransaction);
         }
     }
@@ -121,12 +137,15 @@ const lines = extractLines('uploads/test.pdf').then((lines) => {
     let totalDeposits = 0
     let totalWithdrawals = 0
     for (let transaction of acceptedTrans) {
+        console.log(transaction)
         if (transaction.amount < 0) {
             totalWithdrawals -= transaction.amount
         } else {
             totalDeposits += transaction.amount
         }
     }
+    const { inserted, skipped } = addTransactions(acceptedTrans);
+    console.log(`inserted: ${inserted}, skipped: ${skipped}`);
     console.log(`no. of transactions: ${acceptedTrans.length}\n deposits: ${totalDeposits}, withdrawals: ${totalWithdrawals}`)
 })
 
