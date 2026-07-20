@@ -2,6 +2,7 @@ import fs from 'fs';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { createHash } from 'crypto';
 import { addTransactions, countTransactions, getAllTransactions } from './db.js';
+import { CATEGORY_KEYWORDS } from '../private/keywords.js';
 //Constants
 const PDF_X_LOWER_LIMIT_DEPOSITS = 500;
 const PDF_Y_DELTA_LINE_LIMIT = 15;
@@ -57,7 +58,15 @@ export async function extractLines(dataBuffer) {
 }
 
 function getCategoryFromDesc(desc) {
-    return "unknown"
+    const upper = desc.toUpperCase();
+    for (const category in CATEGORY_KEYWORDS) {
+        for (const keyword of CATEGORY_KEYWORDS[category]) {
+            if (upper.includes(keyword.toUpperCase())) {
+                return category;
+            }
+        }
+    }
+    return "unknown";
 }
 
 

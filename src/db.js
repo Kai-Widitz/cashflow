@@ -23,8 +23,12 @@ const stmts = {
   insert: db.prepare(`
     INSERT INTO transactions (uid, date, description, amount, category)
     VALUES (@uid, @date, @description, @amount, @category)
-    ON CONFLICT(uid) DO NOTHING
-  `),
+    ON CONFLICT(uid) DO UPDATE SET
+        date        = excluded.date,
+        description = excluded.description,
+        amount      = excluded.amount,
+        category    = excluded.category
+    `),
   remove: db.prepare(`DELETE FROM transactions WHERE uid = ?`),
   getOne: db.prepare(`SELECT * FROM transactions WHERE uid = ?`),
   getAll: db.prepare(`SELECT * FROM transactions ORDER BY date DESC`),
@@ -57,10 +61,13 @@ export function addTransaction(transaction) {
 // Batch insert in a single db transaction. Returns { inserted, skipped }.
 export const addTransactions = db.transaction((transactions) => {
   let inserted = 0;
+  let updated = 0;
   for (const t of transactions) {
-    inserted += stmts.insert.run(toRow(t)).changes;
+    const existed = stmts.getOne.get(t.uid) !== undefined;
+    stmts.insert.run(toRow(t));
+    existed ? updated++ : inserted++;
   }
-  return { inserted, skipped: transactions.length - inserted };
+  return { inserted, updated, skipped: 0 };
 });
 
 // Returns true if a row was deleted, false if the uid was not found.
