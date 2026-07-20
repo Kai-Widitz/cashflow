@@ -9,7 +9,46 @@ const KEYWORD_HINTS = Object.entries(CATEGORY_KEYWORDS)
     .map(([cat, keywords]) => `${cat}: ${keywords.join(', ')}`)
     .join('\n');
 
+function matchKeywordCategory(description) {
+    const upper = description.toUpperCase();
+    for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+        for (const keyword of keywords) {
+            if (upper.includes(keyword.toUpperCase())) {
+                return category;
+            }
+        }
+    }
+    return null;
+}
+
 export async function categorizeBatch(descriptions) {
+    const results = new Array(descriptions.length).fill(null);
+    const unmatchedIndices = [];
+    const unmatchedDescriptions = [];
+
+    descriptions.forEach((description, i) => {
+        const category = matchKeywordCategory(description);
+        if (category) {
+            results[i] = category;
+        } else {
+            unmatchedIndices.push(i);
+            unmatchedDescriptions.push(description);
+        }
+    });
+
+    console.log(`${descriptions.length - unmatchedDescriptions.length}/${descriptions.length} matched by keyword rules, ${unmatchedDescriptions.length} sent to LLM`);
+
+    if (unmatchedDescriptions.length > 0) {
+        const llmResults = await categorizeWithLLM(unmatchedDescriptions);
+        unmatchedIndices.forEach((originalIndex, j) => {
+            results[originalIndex] = llmResults[j];
+        });
+    }
+
+    return results;
+}
+
+async function categorizeWithLLM(descriptions) {
     const results = [];
 
     for (let i = 0; i < descriptions.length; i += BATCH_SIZE) {
