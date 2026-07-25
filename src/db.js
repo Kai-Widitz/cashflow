@@ -36,7 +36,12 @@ const stmts = {
     UPDATE transactions SET category = ? WHERE uid = ?
   `),
   count: db.prepare(`SELECT COUNT(*) AS n FROM transactions`),
+  clear: db.prepare(`DELETE FROM transactions`),
 };
+
+export function clearTransactions() {
+  return stmts.clear.run().changes;
+}
 
 function toRow(t) {
   return {

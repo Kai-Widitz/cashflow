@@ -206,4 +206,21 @@ function renderTimeChart(transactions) {
   });
 }
 document.getElementById('resetZoom').onclick = () => timeChart?.resetZoom();
+
+document.getElementById('clearBtn').addEventListener('click', async () => {
+  if (!confirm('Delete all transactions? This cannot be undone.')) return;
+
+  statusEl.textContent = 'clearing...';
+  try {
+    const res = await fetch('/api/clear', { method: 'POST' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error);
+
+    statusEl.textContent = `deleted ${result.deleted} transactions`;
+    await loadTransactions();
+  } catch (err) {
+    statusEl.textContent = 'failed: ' + err.message;
+  }
+});
+
 loadTransactions();

@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { extractLines, extractTransactions } from './main.js';
-import { addTransactions, getAllTransactions } from './db.js';
+import { addTransactions, getAllTransactions, clearTransactions  } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -34,3 +34,8 @@ app.get('/api/transactions', (req, res) => {
 });
 
 app.listen(3000, () => console.log('http://localhost:3000'));
+
+app.post('/api/clear', (req, res) => {
+  const deleted = clearTransactions();
+  res.json({ deleted });
+});
