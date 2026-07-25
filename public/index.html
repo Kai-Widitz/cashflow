@@ -3,36 +3,13 @@
 <head>
     <meta charset="utf-8">
     <title>Cashflow</title>
-    <style>
-        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-        table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-        th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #ddd; }
-        td.amount { text-align: right; font-variant-numeric: tabular-nums; }
-        td.amount.negative { color: #c0392b; }
-        #status { margin-left: 1rem; color: #555; }
-
-        #summary { display: flex; gap: 2rem; margin: 1.5rem 0; flex-wrap: wrap; }
-        .stat { display: flex; flex-direction: column; }
-        .stat .label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
-        .stat .value { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
-        .positive { color: #27ae60; }
-        .negative { color: #c0392b; }
-
-        #categoryFilter { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1rem 0; }
-        #categoryFilter label { font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
-
-        #chartWrap { position: relative; max-width: 380px; height: 380px; margin: 1.5rem 0; }
-        #chartWrap canvas { display: block; width: 100% !important; height: 100% !important; }
-
-        #timeControls { display: flex; gap: 1.5rem; align-items: center; margin: 1.5rem 0 0.5rem; font-size: 0.85rem; }
-
-        #timeChartWrap { position: relative; max-width: 900px; height: 320px; margin-bottom: 2rem; }
-        #timeChartWrap canvas { display: block; width: 100% !important; height: 100% !important; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Cashflow</h1>
-
+    <p style="color: red;">
+        Currently only accepts ANZ Transaction statements
+    </p>
     <form id="uploadForm">
         <input type="file" id="fileInput" name="statement" accept="application/pdf" required>
         <button type="submit">Import</button>
@@ -51,23 +28,23 @@
     <div id="chartWrap">
         <canvas id="categoryChart"></canvas>
     </div>
+    <div id="timeChartBody">
+        <div id="timeControls">
+            <label>Group by
+                <select id="groupBy">
+                    <option value="day" selected>Day</option>
+                    <option value="week">Week</option>
+                    <option value="month">Month</option>
+                </select>
+            </label>
+            <label><input type="checkbox" id="cumulative"> Cumulative</label>
+            <button id="resetZoom" type="button">Reset zoom</button>
+        </div>
 
-    <div id="timeControls">
-        <label>Group by
-            <select id="groupBy">
-                <option value="day">Day</option>
-                <option value="week">Week</option>
-                <option value="month" selected>Month</option>
-            </select>
-        </label>
-        <label><input type="checkbox" id="cumulative"> Cumulative</label>
-        <button id="resetZoom" type="button">Reset zoom</button>
+        <div id="timeChartWrap">
+            <canvas id="timeChart"></canvas>
+        </div>
     </div>
-
-    <div id="timeChartWrap">
-        <canvas id="timeChart"></canvas>
-    </div>
-
     <table id="txTable">
         <thead>
             <tr><th>Date</th><th>Description</th><th>Amount</th><th>Category</th></tr>

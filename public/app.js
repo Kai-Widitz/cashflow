@@ -88,7 +88,7 @@ function renderTable(transactions) {
     row.insertCell().textContent = t.description;
     const amountCell = row.insertCell();
     amountCell.textContent = t.amount.toFixed(2);
-    amountCell.className = 'amount' + (t.amount < 0 ? ' negative' : '');
+    amountCell.className = 'amount ' + (t.amount < 0 ? 'negative' : 'positive');
     row.insertCell().textContent = t.category;
   }
 }
