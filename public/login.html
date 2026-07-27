@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cashflow — Sign in</title>
+  <style>
+    :root {
+      --page: #d1e8be;
+      --card: cornsilk;
+      --ink: #2c3a24;
+      --muted: #6b7a5c;
+      --accent: #3a7d44;
+      --accent-dark: #2f6537;
+      --error: #c0392b;
+      --line: #d8d2b0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      font-family: system-ui, sans-serif;
+      color: var(--ink);
+      background-color: var(--page);
+    }
+
+    .card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 10px 30px rgba(44, 58, 36, 0.12);
+    }
+
+    .brand {
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.25rem;
+    }
+
+    .tagline {
+      margin: 0 0 1.5rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      background: rgba(58, 125, 68, 0.1);
+      border-radius: 9px;
+      padding: 0.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0.5rem;
+      border-radius: 7px;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--card);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(44, 58, 36, 0.15);
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      background: #fffdf5;
+      color: var(--ink);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(58, 125, 68, 0.15);
+    }
+
+    button.submit {
+      width: 100%;
+      padding: 0.7rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.submit:hover { background: var(--accent-dark); }
+    button.submit:disabled { opacity: 0.6; cursor: default; }
+
+    .message {
+      min-height: 1.2rem;
+      margin-top: 0.9rem;
+      font-size: 0.85rem;
+      color: var(--error);
+      text-align: center;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin: -0.6rem 0 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 class="brand">Cashflow</h1>
+    <p class="tagline">Sign in to see your spending.</p>
+
+    <div class="tabs">
+      <button class="tab active" id="tabLogin">Sign in</button>
+      <button class="tab" id="tabRegister">Create account</button>
+    </div>
+
+    <form id="authForm">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" required>
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <p class="hint" id="passwordHint" hidden>At least 8 characters.</p>
+
+      <button class="submit" id="submitBtn" type="submit">Sign in</button>
+      <p class="message" id="message"></p>
+    </form>
+  </div>
+
+  <script>
+    let mode = 'login';
+
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const submitBtn = document.getElementById('submitBtn');
+    const messageEl = document.getElementById('message');
+    const passwordHint = document.getElementById('passwordHint');
+    const passwordInput = document.getElementById('password');
+
+    function setMode(next) {
+      mode = next;
+      const login = next === 'login';
+      tabLogin.classList.toggle('active', login);
+      tabRegister.classList.toggle('active', !login);
+      submitBtn.textContent = login ? 'Sign in' : 'Create account';
+      passwordHint.hidden = login;
+      passwordInput.autocomplete = login ? 'current-password' : 'new-password';
+      messageEl.textContent = '';
+    }
+
+    tabLogin.onclick = () => setMode('login');
+    tabRegister.onclick = () => setMode('register');
+
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = passwordInput.value;
+
+      submitBtn.disabled = true;
+      messageEl.textContent = '';
+
+      try {
+        const res = await fetch('/api/' + mode, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Something went wrong.');
+        window.location.href = '/';
+      } catch (err) {
+        messageEl.textContent = err.message;
+        submitBtn.disabled = false;
+      }
+    });
+
+    // if already signed in, skip straight to the app
+    fetch('/api/me').then(r => { if (r.ok) window.location.href = '/'; });
+  </script>
+</body>
+</html>

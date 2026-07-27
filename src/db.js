@@ -6,45 +6,54 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const db = new Database(path.join(__dirname, '..', 'private', 'transactions.db'));
 
 db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS transactions (
-    uid         TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id),
+    uid         TEXT NOT NULL,
     date        TEXT NOT NULL,
     description TEXT NOT NULL,
     amount      REAL NOT NULL,
     category    TEXT NOT NULL,
-    imported_at TEXT NOT NULL DEFAULT (datetime('now'))
+    imported_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, uid)
   );
   CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 `);
 
 const stmts = {
   insert: db.prepare(`
-    INSERT INTO transactions (uid, date, description, amount, category)
-    VALUES (@uid, @date, @description, @amount, @category)
-    ON CONFLICT(uid) DO UPDATE SET
+    INSERT INTO transactions (user_id, uid, date, description, amount, category)
+    VALUES (@user_id, @uid, @date, @description, @amount, @category)
+    ON CONFLICT(user_id, uid) DO UPDATE SET
         date        = excluded.date,
         description = excluded.description,
         amount      = excluded.amount,
         category    = excluded.category
-    `),
-  remove: db.prepare(`DELETE FROM transactions WHERE uid = ?`),
-  getOne: db.prepare(`SELECT * FROM transactions WHERE uid = ?`),
-  getAll: db.prepare(`SELECT * FROM transactions ORDER BY date DESC`),
-  updateCategory: db.prepare(`
-    UPDATE transactions SET category = ? WHERE uid = ?
   `),
-  count: db.prepare(`SELECT COUNT(*) AS n FROM transactions`),
-  clear: db.prepare(`DELETE FROM transactions`),
+  getOne: db.prepare(`SELECT * FROM transactions WHERE user_id = ? AND uid = ?`),
+  getAll: db.prepare(`SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC`),
+  remove: db.prepare(`DELETE FROM transactions WHERE user_id = ? AND uid = ?`),
+  updateCategory: db.prepare(`UPDATE transactions SET category = ? WHERE user_id = ? AND uid = ?`),
+  count: db.prepare(`SELECT COUNT(*) AS n FROM transactions WHERE user_id = ?`),
+  clear: db.prepare(`DELETE FROM transactions WHERE user_id = ?`),
+
+  createUser: db.prepare(`INSERT INTO users (username, password_hash) VALUES (?, ?)`),
+  userByName: db.prepare(`SELECT * FROM users WHERE username = ?`),
+  userById: db.prepare(`SELECT id, username FROM users WHERE id = ?`),
 };
 
-export function clearTransactions() {
-  return stmts.clear.run().changes;
-}
-
-function toRow(t) {
+function toRow(userId, t) {
   return {
+    user_id: userId,
     uid: t.uid,
     date: t.date instanceof Date ? t.date.toISOString() : t.date,
     description: t.description,
@@ -58,46 +67,55 @@ function toTransaction(row) {
   return { ...row, date: new Date(row.date) };
 }
 
-// Returns true if a new row was written, false if the uid was already present.
-export function addTransaction(transaction) {
-  return stmts.insert.run(toRow(transaction)).changes > 0;
+// --- users ---
+
+export function createUser(username, passwordHash) {
+  return stmts.createUser.run(username, passwordHash).lastInsertRowid;
 }
 
-// Batch insert in a single db transaction. Returns { inserted, skipped }.
-export const addTransactions = db.transaction((transactions) => {
+export function getUserByName(username) {
+  return stmts.userByName.get(username);
+}
+
+export function getUserById(id) {
+  return stmts.userById.get(id);
+}
+
+// --- transactions (all scoped to a user) ---
+
+export const addTransactions = db.transaction((userId, transactions) => {
   let inserted = 0;
   let updated = 0;
   for (const t of transactions) {
-    const existed = stmts.getOne.get(t.uid) !== undefined;
-    stmts.insert.run(toRow(t));
+    const existed = stmts.getOne.get(userId, t.uid) !== undefined;
+    stmts.insert.run(toRow(userId, t));
     existed ? updated++ : inserted++;
   }
   return { inserted, updated, skipped: 0 };
 });
 
-// Returns true if a row was deleted, false if the uid was not found.
-export function removeTransaction(uid) {
-  return stmts.remove.run(uid).changes > 0;
+export function getAllTransactions(userId) {
+  return stmts.getAll.all(userId).map(toTransaction);
 }
 
-export function getTransaction(uid) {
-  return toTransaction(stmts.getOne.get(uid));
+export function getTransaction(userId, uid) {
+  return toTransaction(stmts.getOne.get(userId, uid));
 }
 
-export function getAllTransactions() {
-  return stmts.getAll.all().map(toTransaction);
+export function removeTransaction(userId, uid) {
+  return stmts.remove.run(userId, uid).changes > 0;
 }
 
-export function hasTransaction(uid) {
-  return stmts.getOne.get(uid) !== undefined;
+export function setCategory(userId, uid, category) {
+  return stmts.updateCategory.run(category, userId, uid).changes > 0;
 }
 
-export function countTransactions() {
-  return stmts.count.get().n;
+export function countTransactions(userId) {
+  return stmts.count.get(userId).n;
 }
 
-export function setCategory(uid, category) {
-  return stmts.updateCategory.run(category, uid).changes > 0;
+export function clearTransactions(userId) {
+  return stmts.clear.run(userId).changes;
 }
 
 export default db;

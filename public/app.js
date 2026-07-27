@@ -106,6 +106,10 @@ document.getElementById('cumulative').onchange = renderAll;
 
 async function loadTransactions() {
   const res = await fetch('/api/transactions');
+  if (res.status === 401) {
+    window.location.href = '/login.html';
+    return;
+  }
   allTransactions = await res.json();
   renderFilter();
   renderAll();
@@ -223,4 +227,16 @@ document.getElementById('clearBtn').addEventListener('click', async () => {
   }
 });
 
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login.html';
+});
+async function loadUser() {
+  const res = await fetch('/api/me');
+  if (res.ok) {
+    const user = await res.json();
+    document.getElementById('navUser').textContent = user.username;
+  }
+}
+loadUser();
 loadTransactions();

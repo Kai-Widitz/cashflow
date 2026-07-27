@@ -11,10 +11,12 @@
     "dev": "node --watch src/server.js"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.11.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "multer": "^2.2.0",
     "pdfjs-dist": "^5.7.284"
   },
