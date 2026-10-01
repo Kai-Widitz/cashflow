@@ -1,15 +1,52 @@
 const statusEl = document.getElementById('status');
-
-let categoryChart = null;
+// add near the top with other state
+let dateFrom = null;
+let dateTo = null;
 let allTransactions = [];
+let categoryChart = null;
+let timeChart = null;
+// replace visibleTransactions()
+function visibleTransactions() {
+  return allTransactions.filter(t => {
+    if (excluded.has(t.category)) return false;
+    const d = t.date.slice(0, 10);
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo && d > dateTo) return false;
+    return true;
+  });
+}
+
+// add after loadTransactions() is defined
+function initDateRange() {
+  const fromEl = document.getElementById('dateFrom');
+  const toEl = document.getElementById('dateTo');
+  const resetEl = document.getElementById('dateReset');
+
+  fromEl.onchange = () => { dateFrom = fromEl.value || null; renderAll(); };
+  toEl.onchange = () => { dateTo = toEl.value || null; renderAll(); };
+  resetEl.onclick = () => {
+    dateFrom = null;
+    dateTo = null;
+    fromEl.value = '';
+    toEl.value = '';
+    renderAll();
+  };
+}
+
+// also set default range once transactions load, add inside loadTransactions() after allTransactions is set:
+if (allTransactions.length) {
+    const dates = allTransactions.map(t => t.date.slice(0, 10)).sort();
+    document.getElementById('dateFrom').value = dates[0];
+    document.getElementById('dateTo').value = dates[dates.length - 1];
+    dateFrom = dates[0];
+    dateTo = dates[dates.length - 1];
+}
+
+
 const excluded = new Set(JSON.parse(localStorage.getItem('excludedCategories') ?? '[]'));
 Chart.register(ChartZoom);
 function saveExclusions() {
   localStorage.setItem('excludedCategories', JSON.stringify([...excluded]));
-}
-
-function visibleTransactions() {
-  return allTransactions.filter(t => !excluded.has(t.category));
 }
 
 function renderFilter() {
@@ -49,7 +86,7 @@ function renderSummary(transactions) {
 function renderCategoryChart(transactions) {
   const totals = new Map();
   for (const t of transactions) {
-    if (t.amount >= 0) continue;               // spending only
+    if (t.amount >= 0) continue;
     totals.set(t.category, (totals.get(t.category) ?? 0) - t.amount);
   }
 
@@ -70,19 +107,48 @@ function renderCategoryChart(transactions) {
           callbacks: {
             label: (ctx) => {
               const pct = total ? (ctx.parsed / total * 100).toFixed(1) : '0.0';
-              return `${ctx.label}: ${ctx.parsed.toFixed(2)} (${pct}%)`;
+              return `${ctx.label}: $${ctx.parsed.toFixed(2)} (${pct}%)`;
             },
           },
         },
       },
     },
+    plugins: [{
+      id: 'pieLabels',
+      afterDatasetDraw(chart) {
+        const { ctx, data } = chart;
+        const dataset = data.datasets[0];
+        const meta = chart.getDatasetMeta(0);
+        const total = dataset.data.reduce((s, v) => s + v, 0);
+
+        meta.data.forEach((arc, i) => {
+          const value = dataset.data[i];
+          const pct = total ? (value / total * 100) : 0;
+          if (pct < 4) return; // skip tiny slices
+
+          const { x, y } = arc.tooltipPosition();
+          ctx.save();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.shadowColor = 'rgba(0,0,0,0.5)';
+          ctx.shadowBlur = 3;
+          ctx.fillText(data.labels[i], x, y - 14);      // category name
+          ctx.fillText(`$${value.toFixed(0)}`, x, y);    // dollar amount
+          ctx.fillText(`${pct.toFixed(1)}%`, x, y + 14); // percentage
+          ctx.restore();
+        });
+      }
+    }],
   });
 }
 
 function renderTable(transactions) {
   const tbody = document.querySelector('#txTable tbody');
   tbody.innerHTML = '';
-  for (const t of transactions) {
+  const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
+  for (const t of sorted) {
     const row = tbody.insertRow();
     row.insertCell().textContent = t.date.slice(0, 10);
     row.insertCell().textContent = t.description;
@@ -135,7 +201,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     statusEl.textContent = 'failed: ' + err.message;
   }
 });
-let timeChart = null;
+
 
 function bucketKey(date, groupBy) {
   const iso = date.slice(0, 10);            // YYYY-MM-DD
@@ -240,3 +306,4 @@ async function loadUser() {
 }
 loadUser();
 loadTransactions();
+initDateRange()
