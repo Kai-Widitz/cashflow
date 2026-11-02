@@ -81,6 +81,225 @@ td.amount.negative {
   cursor: pointer;
 }
 
+/* --- sorter --- */
+
+#sorter, #rulesPanel {
+  background: cornsilk;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+}
+
+#sorter {
+  border: 2px solid #85BB65;
+}
+
+.sorter-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.sorter-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+#sorterProgress {
+  color: #666;
+  font-size: 0.85rem;
+  flex: 1;
+}
+
+#sorterSaved {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #e8f4dd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.sorter-merchant {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.sorter-merchant strong {
+  font-size: 1.2rem;
+}
+
+#sorterMeta {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+#sorterExamples {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+  font-size: 0.8rem;
+  color: #555;
+  font-family: ui-monospace, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sorter-keyword {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+#sorterKeyword {
+  font-family: ui-monospace, monospace;
+  text-transform: uppercase;
+  padding: 0.3rem 0.5rem;
+  min-width: 14rem;
+}
+
+#sorterMatches {
+  font-size: 0.8rem;
+  color: #27ae60;
+  margin: 0.3rem 0 0.75rem;
+}
+
+#sorterMatches.warn {
+  color: #b9770e;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.chip {
+  border: 1px solid #85BB65;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.chip:hover, .chip.active {
+  background: #85BB65;
+  color: #fff;
+}
+
+#sorterGroups .chip {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.5rem 1.2rem;
+}
+
+.chip.general {
+  border-style: dashed;
+}
+
+.sorter-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+button.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #2c7a3f;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+#rulesPanel summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#ruleForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+
+#ruleKeyword {
+  font-family: ui-monospace, monospace;
+  text-transform: uppercase;
+}
+
+#ruleSearch {
+  width: 100%;
+  max-width: 20rem;
+  box-sizing: border-box;
+}
+
+#rulesList {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+#rulesList code {
+  background: #fff;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.muted {
+  color: #777;
+}
+
+/* --- category column --- */
+
+.category-btn {
+  background: none;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.category-btn:hover {
+  border-color: #85BB65;
+}
+
+.category-btn.locked {
+  font-weight: 600;
+}
+
+#disclaimer {
+  margin: 2rem 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: cornsilk;
+  color: #666;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+#chartMode {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
 #chartWrap {
   position: relative;
   height: 550px;

@@ -16,7 +16,7 @@
     </header>
 
     <p style="color: red;">
-        Currently only accepts ANZ Transaction statements
+        Accepts ANZ transaction reports and AMEX card activity statements
     </p>
     <form id="uploadForm">
         <input type="file" id="fileInput" name="statement" accept="application/pdf" required>
@@ -24,6 +24,47 @@
         <span id="status"></span>
     </form>
     <button id="clearBtn" type="button">Clear database</button>
+    <button id="sorterOpen" type="button" hidden></button>
+
+    <section id="sorter" hidden>
+        <div class="sorter-head">
+            <h2>Sort your spending</h2>
+            <span id="sorterProgress"></span>
+            <button id="sorterHide" type="button">Later</button>
+        </div>
+        <div id="sorterSaved" hidden></div>
+        <div id="sorterBody">
+            <div class="sorter-merchant">
+                <strong id="sorterName"></strong>
+                <span id="sorterMeta"></span>
+            </div>
+            <ul id="sorterExamples"></ul>
+            <label class="sorter-keyword">
+                Match descriptions containing
+                <input id="sorterKeyword" type="text" spellcheck="false">
+            </label>
+            <div id="sorterMatches"></div>
+            <div id="sorterGroups" class="chips"></div>
+            <div id="sorterSubs" class="chips" hidden></div>
+            <div class="sorter-actions">
+                <button id="sorterSkip" type="button">Skip</button>
+                <span id="sorterStatus"></span>
+            </div>
+        </div>
+    </section>
+
+    <details id="rulesPanel">
+        <summary>Your keywords (<span id="rulesCount">0</span>)</summary>
+        <form id="ruleForm">
+            <input id="ruleKeyword" type="text" placeholder="e.g. COLES" spellcheck="false" required>
+            <select id="ruleCategory" required></select>
+            <label><input id="ruleWholeWord" type="checkbox"> Whole word only</label>
+            <button type="submit">Add</button>
+            <span id="ruleStatus"></span>
+        </form>
+        <input id="ruleSearch" type="search" placeholder="Search your keywords">
+        <ul id="rulesList"></ul>
+    </details>
     <div id="dateRange">
         <label>From <input type="date" id="dateFrom"></label>
         <label>To <input type="date" id="dateTo"></label>
@@ -38,6 +79,10 @@
 
     <div id="categoryFilter"></div>
 
+    <div id="chartMode">
+        <label><input type="radio" name="chartMode" value="group" checked> Groups</label>
+        <label><input type="radio" name="chartMode" value="detail"> Detailed</label>
+    </div>
     <div id="chartWrap">
         <canvas id="categoryChart"></canvas>
     </div>
@@ -64,6 +109,12 @@
         </thead>
         <tbody></tbody>
     </table>
+
+    <footer id="disclaimer">
+        Cashflow can misread statements, miss transactions or put them in the wrong category,
+        so these figures may be wrong. Don't use it for financial, tax or legal decisions.
+        Always check against your official bank statements.
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
